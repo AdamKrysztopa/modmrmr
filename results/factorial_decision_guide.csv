@@ -1,0 +1,16 @@
+dataset,dependence,best_spec_by_f1,best_f1,best_spec_by_noise_rate,best_noise_rate
+linear_control_clf,linear,spearman|pearson_abs|difference|sum,0.8217316017316018,spearman|distance_corr|difference|mean,0.15803030303030302
+linear_control_reg,linear,dcor|distance_corr|difference|sum,0.7256709956709957,mi|distance_corr|difference|mean,0.09621212121212122
+mixed,mixed,dcor|pearson_abs|multiplicative|mean,0.45568673750491934,mi|spearman_abs|difference|mean,0.09431818181818181
+nonlin_redundancy_clf,mixed,mi|distance_corr|difference|sum,0.81,mi|distance_corr|difference|sum,0.251
+nonlin_redundancy_reg,mixed,pearson|distance_corr|difference|max,0.82,mi|distance_corr|difference|max,0.12133333333333333
+parabola,nonlinear,dcor|pearson_abs|difference|sum,0.45979797979797976,mi|distance_corr|difference|max,0.09886363636363636
+probe_breast_cancer,mixed,spearman|pearson_abs|multiplicative|mean,0.5412814232988751,spearman|distance_corr|difference|mean,0.0025074110671936757
+probe_diabetes,mixed,f|distance_corr|difference|sum,0.7064007650964172,pearson|distance_corr|difference|mean,0.07524801587301587
+quotient_trap_clf,linear,pearson|distance_corr|difference|mean,0.6433971583971584,spearman|distance_corr|difference|mean,0.08159722222222222
+quotient_trap_reg,linear,dcor|distance_corr|difference|sum,0.7744327894327895,pearson|distance_corr|difference|mean,0.07430555555555556
+radial,nonlinear,mi|pearson_abs|difference|mean,0.6214285714285714,mi|spearman_abs|difference|max,0.10045454545454546
+redundant_blocks_clf,linear,dcor|spearman_abs|difference|sum,0.5484305971805973,pearson|distance_corr|difference|mean,0.022152777777777778
+redundant_blocks_reg,linear,pearson|spearman_abs|difference|sum,0.6859022921522921,spearman|distance_corr|difference|mean,0.01851851851851852
+sine,nonlinear,mi|mutual_info_sklearn|difference|max,0.7511111111111111,mi|pearson_abs|difference|sum,0.09772727272727273
+xor,nonlinear,f|distance_corr|difference|sum,0.4458441558441559,spearman|distance_corr|difference|mean,0.6186363636363637

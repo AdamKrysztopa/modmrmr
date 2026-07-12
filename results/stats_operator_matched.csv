@@ -1,0 +1,15 @@
+metric,test,arm_a,arm_b,statistic,p_raw,p_holm,n_blocks
+f1,friedman,,,16.52000000000001,0.0008869671122260368,,15
+f1,wilcoxon_holm,difference,quotient,12.0,0.0042724609375,0.0128173828125,15
+f1,wilcoxon_holm,difference,multiplicative,40.0,0.27685546875,0.27685546875,15
+f1,wilcoxon_holm,difference,reg_quotient,15.0,0.00836181640625,0.0167236328125,15
+f1,wilcoxon_holm,quotient,multiplicative,5.0,0.0006103515625,0.003662109375,15
+f1,wilcoxon_holm,quotient,reg_quotient,9.0,0.00201416015625,0.008056640625,15
+f1,wilcoxon_holm,multiplicative,reg_quotient,5.0,0.0006103515625,0.003662109375,15
+noise_rate,friedman,,,41.48000000000002,5.172578476857426e-09,,15
+noise_rate,wilcoxon_holm,difference,quotient,0.0,6.103515625e-05,0.0003662109375,15
+noise_rate,wilcoxon_holm,difference,multiplicative,25.0,0.04791259765625,0.04791259765625,15
+noise_rate,wilcoxon_holm,difference,reg_quotient,0.0,6.103515625e-05,0.0003662109375,15
+noise_rate,wilcoxon_holm,quotient,multiplicative,0.0,6.103515625e-05,0.0003662109375,15
+noise_rate,wilcoxon_holm,quotient,reg_quotient,0.0,6.103515625e-05,0.0003662109375,15
+noise_rate,wilcoxon_holm,multiplicative,reg_quotient,0.0,6.103515625e-05,0.0003662109375,15

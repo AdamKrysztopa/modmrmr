@@ -1,0 +1,6 @@
+mode,mean_f1,mean_selected_size,n_mechanisms
+fixed_k@5,0.3754,5.0,11
+fixed_k@10,0.4535,10.0,4
+val_fixed_k,0.4653,4.695,11
+val_threshold,0.4642,7.659,11
+threshold,0.4327,7.458,11

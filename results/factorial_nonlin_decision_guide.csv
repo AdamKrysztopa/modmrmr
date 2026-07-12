@@ -1,0 +1,12 @@
+dataset,dependence,best_spec_by_f1,best_f1,best_spec_by_noise_rate,best_noise_rate
+annulus,nonlinear,mi|mutual_info_sklearn|multiplicative|max,0.7519480519480519,mi|distance_corr|difference|max,0.15606060606060607
+checkerboard,nonlinear,spearman|spearman_abs|quotient|max,0.38027417027417026,dcor|distance_corr|difference|sum,0.6533333333333333
+conditional_redundancy,nonlinear,dcor|spearman_abs|difference|sum,0.6136363636363636,mi|pearson_abs|difference|sum,0.09
+heteroscedastic,nonlinear,dcor|distance_corr|difference|sum,0.7166666666666667,dcor|distance_corr|difference|sum,0.2225757575757576
+max_of,nonlinear,mi|spearman_abs|difference|max,0.8723140495867768,dcor|distance_corr|difference|sum,0.09318181818181819
+multiplicative_interaction,nonlinear,mi|pearson_abs|difference|sum,0.838008658008658,dcor|distance_corr|difference|sum,0.15303030303030302
+polynomial_sign,nonlinear,mi|distance_corr|difference|max,0.792929292929293,mi|distance_corr|difference|max,0.25833333333333336
+ratio,nonlinear,dcor|distance_corr|difference|sum,0.7832034632034632,dcor|distance_corr|difference|sum,0.16833333333333333
+saturation,nonlinear,mi|mutual_info_sklearn|difference|mean,0.71,mi|spearman_abs|difference|sum,0.12399999999999999
+sinc_2d,nonlinear,mi|mutual_info_sklearn|difference|max,0.801038961038961,mi|distance_corr|difference|sum,0.15303030303030302
+threshold_and,nonlinear,mi|pearson_abs|difference|sum,0.8434632034632035,mi|distance_corr|difference|max,0.1590909090909091
