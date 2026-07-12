@@ -1,0 +1,215 @@
+{
+  "blocked": [
+    {
+      "block_reason": "lag=1 < forecast_horizon=4 + availability_margin=0",
+      "covariate_name": "measured_signal",
+      "feature_name": "x_measured_signal_lag1",
+      "is_known_future": false,
+      "known_future_provenance": null,
+      "lag": 1,
+      "legality_reason": "blocked_lag_too_small"
+    }
+  ],
+  "case_name": "known_future_bypass",
+  "config": {
+    "availability_margin": 0,
+    "candidate_lags": [
+      1,
+      4
+    ],
+    "forecast_horizon": 4,
+    "known_future_covariates": {
+      "calendar_flag": "calendar"
+    },
+    "max_selected_features": 2,
+    "target_lags": []
+  },
+  "contract": {
+    "baseline_families": [
+      "naive",
+      "seasonal_naive"
+    ],
+    "blocked": false,
+    "calendar_features": [],
+    "calendar_locale": null,
+    "candidate_seasonal_periods": [],
+    "caution_flags": [],
+    "confidence_label": "high",
+    "contract_version": "0.3.4",
+    "covariate_notes": [
+      "future covariate calendar_flag: lags [1]",
+      "past covariate measured_signal: lags [4]"
+    ],
+    "covariate_rows": [
+      {
+        "confidence": "high",
+        "future_known_required": true,
+        "informative": true,
+        "known_future_provenance": "calendar",
+        "lagged_feature_names": [
+          "x_calendar_flag_lag1"
+        ],
+        "name": "calendar_flag",
+        "rationale": "lag-aware ModMRMR selected known-future lags: [1] (provenance=calendar)",
+        "role": "future",
+        "selected_lags": [
+          1
+        ]
+      },
+      {
+        "confidence": "high",
+        "future_known_required": false,
+        "informative": true,
+        "lagged_feature_names": [
+          "x_measured_signal_lag4"
+        ],
+        "name": "measured_signal",
+        "rationale": "lag-aware ModMRMR selected sparse measured lags: [4]",
+        "role": "past",
+        "selected_lags": [
+          4
+        ]
+      }
+    ],
+    "downstream_notes": [
+      "deterministic lag-aware regression fixture route"
+    ],
+    "excluded_target_lags": [],
+    "forecastability_class": "high",
+    "future_covariates": [
+      "calendar_flag"
+    ],
+    "horizon": 4,
+    "lag_rationale": [
+      "lag 1 is the strongest non-seasonal lag",
+      "lag 4 is secondary under current confidence"
+    ],
+    "metadata": {
+      "covariate_rows": 2,
+      "family_rows": 4,
+      "lag_rows": 2
+    },
+    "past_covariates": [
+      "measured_signal"
+    ],
+    "readiness_status": "clear",
+    "recommended_families": [
+      "arima"
+    ],
+    "recommended_seasonal_lags": [],
+    "recommended_target_lags": [
+      1,
+      4
+    ],
+    "rejected_covariates": [],
+    "source_goal": "lagged_exogenous",
+    "static_features": [],
+    "target_frequency": null,
+    "target_history_context": {
+      "enabled": false,
+      "max_selected_redundancy": 0.0,
+      "normalization_strategy": null,
+      "notes": [
+        "target-history novelty penalty disabled"
+      ],
+      "penalized_selected_features": 0,
+      "scorer_name": null,
+      "target_lags": []
+    },
+    "transformation_hints": []
+  },
+  "lag_table": [
+    {
+      "axis": "target",
+      "driver": "target",
+      "lag": 1,
+      "rationale": "lag 1 is the strongest non-seasonal lag",
+      "role": "direct",
+      "selected_for_handoff": true
+    },
+    {
+      "axis": "target",
+      "driver": "target",
+      "lag": 4,
+      "rationale": "lag 4 is secondary under current confidence",
+      "role": "direct",
+      "selected_for_handoff": true
+    },
+    {
+      "axis": "past",
+      "driver": "measured_signal",
+      "feature_name": "x_measured_signal_lag4",
+      "future_known_required": false,
+      "kind": "measured",
+      "known_future_provenance": null,
+      "lag": 4,
+      "rationale": "lag-aware ModMRMR selected sparse measured lags: [4]",
+      "role": "past",
+      "selected_for_handoff": true
+    },
+    {
+      "axis": "future",
+      "driver": "calendar_flag",
+      "feature_name": "x_calendar_flag_lag1",
+      "future_known_required": true,
+      "kind": "known_future:calendar",
+      "known_future_provenance": "calendar",
+      "lag": 1,
+      "rationale": "lag-aware ModMRMR selected known-future lags: [1] (provenance=calendar)",
+      "role": "future",
+      "selected_for_handoff": true
+    }
+  ],
+  "markdown_length": 1474,
+  "n_candidates_blocked": 1,
+  "n_candidates_evaluated": 3,
+  "notes": [
+    "1 candidate(s) blocked: lag < forecast_horizon=4 + availability_margin=0.",
+    "Target-history novelty penalty is disabled (target_lags not set).",
+    "Multiplicative maximum-similarity suppression against the already-selected feature set only."
+  ],
+  "rejected": [
+    {
+      "covariate_name": "calendar_flag",
+      "feature_name": "x_calendar_flag_lag4",
+      "final_score": 0.0,
+      "is_known_future": true,
+      "known_future_provenance": "calendar",
+      "lag": 4,
+      "max_redundancy": 1.0,
+      "rejection_reason": "max_features_reached",
+      "relevance": 0.028577558463848955,
+      "target_history_redundancy": 0.0
+    }
+  ],
+  "selected": [
+    {
+      "covariate_name": "calendar_flag",
+      "feature_name": "x_calendar_flag_lag1",
+      "final_score": 0.9998901234133821,
+      "is_known_future": true,
+      "known_future_provenance": "calendar",
+      "lag": 1,
+      "max_redundancy": 0.0,
+      "relevance": 0.9998901234133821,
+      "selection_rank": 1,
+      "target_history_redundancy": 0.0
+    },
+    {
+      "covariate_name": "measured_signal",
+      "feature_name": "x_measured_signal_lag4",
+      "final_score": 0.9700323518418638,
+      "is_known_future": false,
+      "known_future_provenance": null,
+      "lag": 4,
+      "max_redundancy": 0.029837446991103172,
+      "relevance": 0.9998657944829665,
+      "selection_rank": 2,
+      "target_history_redundancy": 0.0
+    }
+  ],
+  "selected_feature_names": [
+    "x_calendar_flag_lag1",
+    "x_measured_signal_lag4"
+  ]
+}

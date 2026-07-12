@@ -1,0 +1,148 @@
+{
+  "blocked": [],
+  "case_name": "duplicate_sensor_suppression",
+  "config": {
+    "availability_margin": 0,
+    "candidate_lags": [
+      4
+    ],
+    "forecast_horizon": 1,
+    "known_future_covariates": {},
+    "max_selected_features": 2,
+    "target_lags": []
+  },
+  "contract": {
+    "baseline_families": [
+      "naive",
+      "seasonal_naive"
+    ],
+    "blocked": false,
+    "calendar_features": [],
+    "calendar_locale": null,
+    "candidate_seasonal_periods": [],
+    "caution_flags": [],
+    "confidence_label": "high",
+    "contract_version": "0.3.4",
+    "covariate_notes": [
+      "past covariate sensor_a: lags [4]"
+    ],
+    "covariate_rows": [
+      {
+        "confidence": "high",
+        "future_known_required": false,
+        "informative": true,
+        "lagged_feature_names": [
+          "x_sensor_a_lag4"
+        ],
+        "name": "sensor_a",
+        "rationale": "lag-aware ModMRMR selected sparse measured lags: [4]",
+        "role": "past",
+        "selected_lags": [
+          4
+        ]
+      }
+    ],
+    "downstream_notes": [
+      "deterministic lag-aware regression fixture route"
+    ],
+    "excluded_target_lags": [],
+    "forecastability_class": "high",
+    "future_covariates": [],
+    "horizon": 1,
+    "lag_rationale": [
+      "lag 4 is the strongest non-seasonal lag"
+    ],
+    "metadata": {
+      "covariate_rows": 1,
+      "family_rows": 4,
+      "lag_rows": 1
+    },
+    "past_covariates": [
+      "sensor_a"
+    ],
+    "readiness_status": "clear",
+    "recommended_families": [
+      "arima"
+    ],
+    "recommended_seasonal_lags": [],
+    "recommended_target_lags": [
+      4
+    ],
+    "rejected_covariates": [],
+    "source_goal": "lagged_exogenous",
+    "static_features": [],
+    "target_frequency": null,
+    "target_history_context": {
+      "enabled": false,
+      "max_selected_redundancy": 0.0,
+      "normalization_strategy": null,
+      "notes": [
+        "target-history novelty penalty disabled"
+      ],
+      "penalized_selected_features": 0,
+      "scorer_name": null,
+      "target_lags": []
+    },
+    "transformation_hints": []
+  },
+  "lag_table": [
+    {
+      "axis": "target",
+      "driver": "target",
+      "lag": 4,
+      "rationale": "lag 4 is the strongest non-seasonal lag",
+      "role": "direct",
+      "selected_for_handoff": true
+    },
+    {
+      "axis": "past",
+      "driver": "sensor_a",
+      "feature_name": "x_sensor_a_lag4",
+      "future_known_required": false,
+      "kind": "measured",
+      "known_future_provenance": null,
+      "lag": 4,
+      "rationale": "lag-aware ModMRMR selected sparse measured lags: [4]",
+      "role": "past",
+      "selected_for_handoff": true
+    }
+  ],
+  "markdown_length": 1266,
+  "n_candidates_blocked": 0,
+  "n_candidates_evaluated": 2,
+  "notes": [
+    "Target-history novelty penalty is disabled (target_lags not set).",
+    "Multiplicative maximum-similarity suppression against the already-selected feature set only."
+  ],
+  "rejected": [
+    {
+      "covariate_name": "sensor_b",
+      "feature_name": "x_sensor_b_lag4",
+      "final_score": 0.0,
+      "is_known_future": false,
+      "known_future_provenance": null,
+      "lag": 4,
+      "max_redundancy": 1.0,
+      "rejection_reason": "zero_final_score",
+      "relevance": 0.9998804018861808,
+      "target_history_redundancy": 0.0
+    }
+  ],
+  "selected": [
+    {
+      "covariate_name": "sensor_a",
+      "feature_name": "x_sensor_a_lag4",
+      "final_score": 0.9998804018861808,
+      "is_known_future": false,
+      "known_future_provenance": null,
+      "lag": 4,
+      "max_redundancy": 0.0,
+      "relevance": 0.9998804018861808,
+      "selection_rank": 1,
+      "target_history_redundancy": 0.0
+    }
+  ],
+  "selected_feature_names": [
+    "x_sensor_a_lag4"
+  ]
+}

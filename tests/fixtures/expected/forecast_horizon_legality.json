@@ -1,0 +1,157 @@
+{
+  "blocked": [
+    {
+      "block_reason": "lag=1 < forecast_horizon=3 + availability_margin=1",
+      "covariate_name": "driver_signal",
+      "feature_name": "x_driver_signal_lag1",
+      "is_known_future": false,
+      "known_future_provenance": null,
+      "lag": 1,
+      "legality_reason": "blocked_lag_too_small"
+    },
+    {
+      "block_reason": "lag=2 < forecast_horizon=3 + availability_margin=1",
+      "covariate_name": "driver_signal",
+      "feature_name": "x_driver_signal_lag2",
+      "is_known_future": false,
+      "known_future_provenance": null,
+      "lag": 2,
+      "legality_reason": "blocked_lag_too_small"
+    }
+  ],
+  "case_name": "forecast_horizon_legality",
+  "config": {
+    "availability_margin": 1,
+    "candidate_lags": [
+      1,
+      2,
+      4
+    ],
+    "forecast_horizon": 3,
+    "known_future_covariates": {},
+    "max_selected_features": 1,
+    "target_lags": []
+  },
+  "contract": {
+    "baseline_families": [
+      "naive",
+      "seasonal_naive"
+    ],
+    "blocked": false,
+    "calendar_features": [],
+    "calendar_locale": null,
+    "candidate_seasonal_periods": [],
+    "caution_flags": [],
+    "confidence_label": "high",
+    "contract_version": "0.3.4",
+    "covariate_notes": [
+      "past covariate driver_signal: lags [4]"
+    ],
+    "covariate_rows": [
+      {
+        "confidence": "high",
+        "future_known_required": false,
+        "informative": true,
+        "lagged_feature_names": [
+          "x_driver_signal_lag4"
+        ],
+        "name": "driver_signal",
+        "rationale": "lag-aware ModMRMR selected sparse measured lags: [4]",
+        "role": "past",
+        "selected_lags": [
+          4
+        ]
+      }
+    ],
+    "downstream_notes": [
+      "deterministic lag-aware regression fixture route"
+    ],
+    "excluded_target_lags": [],
+    "forecastability_class": "high",
+    "future_covariates": [],
+    "horizon": 3,
+    "lag_rationale": [
+      "lag 4 is the strongest non-seasonal lag"
+    ],
+    "metadata": {
+      "covariate_rows": 1,
+      "family_rows": 4,
+      "lag_rows": 1
+    },
+    "past_covariates": [
+      "driver_signal"
+    ],
+    "readiness_status": "clear",
+    "recommended_families": [
+      "arima"
+    ],
+    "recommended_seasonal_lags": [],
+    "recommended_target_lags": [
+      4
+    ],
+    "rejected_covariates": [],
+    "source_goal": "lagged_exogenous",
+    "static_features": [],
+    "target_frequency": null,
+    "target_history_context": {
+      "enabled": false,
+      "max_selected_redundancy": 0.0,
+      "normalization_strategy": null,
+      "notes": [
+        "target-history novelty penalty disabled"
+      ],
+      "penalized_selected_features": 0,
+      "scorer_name": null,
+      "target_lags": []
+    },
+    "transformation_hints": []
+  },
+  "lag_table": [
+    {
+      "axis": "target",
+      "driver": "target",
+      "lag": 4,
+      "rationale": "lag 4 is the strongest non-seasonal lag",
+      "role": "direct",
+      "selected_for_handoff": true
+    },
+    {
+      "axis": "past",
+      "driver": "driver_signal",
+      "feature_name": "x_driver_signal_lag4",
+      "future_known_required": false,
+      "kind": "measured",
+      "known_future_provenance": null,
+      "lag": 4,
+      "rationale": "lag-aware ModMRMR selected sparse measured lags: [4]",
+      "role": "past",
+      "selected_for_handoff": true
+    }
+  ],
+  "markdown_length": 1286,
+  "n_candidates_blocked": 2,
+  "n_candidates_evaluated": 1,
+  "notes": [
+    "2 candidate(s) blocked: lag < forecast_horizon=3 + availability_margin=1.",
+    "Target-history novelty penalty is disabled (target_lags not set).",
+    "Multiplicative maximum-similarity suppression against the already-selected feature set only."
+  ],
+  "rejected": [],
+  "selected": [
+    {
+      "covariate_name": "driver_signal",
+      "feature_name": "x_driver_signal_lag4",
+      "final_score": 0.99986944633377,
+      "is_known_future": false,
+      "known_future_provenance": null,
+      "lag": 4,
+      "max_redundancy": 0.0,
+      "relevance": 0.99986944633377,
+      "selection_rank": 1,
+      "target_history_redundancy": 0.0
+    }
+  ],
+  "selected_feature_names": [
+    "x_driver_signal_lag4"
+  ]
+}

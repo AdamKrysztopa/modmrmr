@@ -1,0 +1,33 @@
+{
+  "blend_weights": [
+    0.35,
+    0.35,
+    0.55
+  ],
+  "candidate_scores": {
+    "blend_candidate": {
+      "redundancy_to_prefix_a": 0.4297601931476006,
+      "redundancy_to_prefix_b": 0.5173259772671785,
+      "relevance": 0.549773824702276,
+      "score_aggregate_mean_redundancy": 0.2894322315864936,
+      "score_maximum_redundancy": 0.26536154356225655
+    },
+    "duplicate_candidate": {
+      "redundancy_to_prefix_a": 0.9993879364132059,
+      "redundancy_to_prefix_b": 0.04293261535957465,
+      "relevance": 0.9625420475815861,
+      "score_aggregate_mean_redundancy": 0.46090336851171576,
+      "score_maximum_redundancy": 0.0005891369380829318
+    }
+  },
+  "case_name": "aggregate_redundancy_vs_maximum",
+  "comparison_lag": 4,
+  "selected_prefix": [
+    "prefix_a",
+    "prefix_b"
+  ],
+  "winner_by_penalty": {
+    "aggregate_mean_redundancy": "duplicate_candidate",
+    "maximum_redundancy": "blend_candidate"
+  }
+}
