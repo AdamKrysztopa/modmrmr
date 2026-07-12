@@ -1,0 +1,47 @@
+# reference papers (large binaries, not ours to redistribute)
+input_papers/
+.DS_Store
+__pycache__/
+*.pyc
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
+*.log
+*.out
+*.synctex.gz
+papers/dmkd-2026/main.pdf
+papers/dmkd-2026/main-submission.pdf
+
+# Per-shard checkpoints are regenerable intermediates; the tidy CSVs and the
+# study parquets they roll up into are both committed, so a clean clone can
+# rebuild every figure and table without re-running the factorial.
+results/_shards/
+results/_*_shards/
+
+# Exploratory figures from mechanism runners default here (not the live paper's
+# artifacts/ -- PAPER_DIR in analysis/paths.py -- which holds only the curated,
+# tracked figures the paper actually includes).
+results/figures/
+
+# superseded parquet backups (kept local, not published)
+results/_archive/
+
+# local caches / virtualenvs
+.venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Manuscripts are not published from this repository. The code, the benchmark
+# harness, and the result artifacts are; the papers written from them are not.
+papers/
+docs/
+
+# local tooling config
+.mcp.json
+
+papers/sn-article-template/*

@@ -1,0 +1,82 @@
+[project]
+name = "modmrmr"
+version = "0.1.0"
+description = "Injectable Maximum-Relevance Minimum-Redundancy feature selection (ModMRMR) with a time-aware layer."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Adam Krysztopa" }]
+dependencies = [
+  "numpy>=2.0,<3",
+  "scipy>=1.13",
+  "scikit-learn>=1.5",
+  "pandas>=2.1,<4",
+  "pydantic>=2.12,<3",
+  "dcor>=0.7",
+  "skrebate>=0.8.2",
+]
+
+[dependency-groups]
+benchmarks = [
+    "matplotlib>=3.11.0",
+    "mrmr-selection>=0.2.8",
+    "openml>=0.15.1",
+    "pyarrow>=24.0.0",
+    "scikit-posthocs>=0.14.0",
+    "skfeature-chappers>=1.1.0",
+]
+dev = [
+  "mypy>=2.1.0",
+  "pytest>=8.4.0",
+  "pytest-xdist>=3.6",
+  "pyyaml>=6.0",
+  "ruff>=0.11.0",
+]
+
+[tool.uv]
+# The analysis, figure, and mechanism tests import matplotlib and the baseline
+# selectors, so a clean clone must get the benchmarks group to run the suite.
+default-groups = ["dev", "benchmarks"]
+
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/modmrmr"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.pytest.ini_options]
+addopts = "-m 'not perf_budget and not network'"
+pythonpath = ["."]
+markers = [
+  "slow: long-running tests",
+  "perf_budget: wall-clock budget tests",
+  "network: tests that download external datasets (skipped by default)",
+]
+
+[tool.mypy]
+# 3.12 (not 3.11) so mypy can parse numpy 2.x's PEP-695 type stubs; the package
+# still supports >=3.11 at runtime.
+python_version = "3.12"
+# Lenient by design: this is numpy/scipy/sklearn-heavy scientific code with
+# partial annotations. Catch real type errors without demanding full typing.
+ignore_missing_imports = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+check_untyped_defs = true
+# Vendored code is not ours to fully annotate.
+exclude = ["src/modmrmr/_vendor/"]
+
+[[tool.mypy.overrides]]
+module = "modmrmr._vendor.*"
+ignore_errors = true
