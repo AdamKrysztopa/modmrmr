@@ -37,16 +37,35 @@ def to_booktabs(
     caption: str | None = None,
     label: str | None = None,
     resizebox: bool = False,
+    font: str | None = None,
+    sideways: bool = False,
+    tabcolsep: str | None = None,
 ) -> Path:
     """Write ``df`` as a standalone booktabs (or longtable) LaTeX fragment.
 
     Float columns are formatted with ``float_fmt``; the max value in any column
     named in ``bold_max_cols`` is wrapped in ``\\textbf{}``. Underscores in string
     (object-dtype) cells and column headers are escaped. Always emits ``index=False``
-    — callers put every displayed field in a real column beforehand. When
-    ``resizebox`` is set, the inner ``tabular`` is wrapped in
-    ``\\resizebox{\\linewidth}{!}{...}`` so wide tables shrink to the text width
-    instead of overflowing the margin (incompatible with ``longtable``).
+    — callers put every displayed field in a real column beforehand.
+
+    Width control, for tables that would otherwise run past the text block:
+
+    * ``font`` wraps the ``tabular`` in a size group (e.g. ``"scriptsize"``).
+    * ``tabcolsep`` shrinks the inter-column padding (e.g. ``"3.5pt"``). With many
+      columns this is often the cheapest win: padding is charged twice per column.
+    * ``sideways`` emits a ``sidewaystable`` (rotating package) on its own page,
+      which is the only real fix for a table that is wide in *content* rather than
+      merely in padding.
+
+    ``resizebox`` is retained for callers outside this class, but note that
+    ``sn-jnl.cls`` patches ``tabular`` so it cannot be typeset inside a box
+    argument — ``\\resizebox{...}{!}{\\begin{tabular}...}`` is a hard error under
+    the Springer class. Use ``font``/``tabcolsep``/``sideways`` instead.
+
+    These are emitted by the generator rather than hand-edited into the artifact:
+    the artifacts are overwritten on every ``paper_tables`` run, so a manual
+    ``\\scriptsize`` added to the ``.tex`` silently disappears the next time this
+    script runs and the table quietly overflows the margin again.
     """
     out = df.reset_index(drop=True).copy()
 
@@ -75,6 +94,21 @@ def to_booktabs(
             "\\begin{tabular}", "\\resizebox{\\linewidth}{!}{%\n\\begin{tabular}", 1
         )
         latex = latex.replace("\\end{tabular}", "\\end{tabular}%\n}", 1)
+
+    if not longtable:
+        preamble = ""
+        if font:
+            preamble += f"{{\\{font}\n"
+        if tabcolsep:
+            preamble += f"\\setlength{{\\tabcolsep}}{{{tabcolsep}}}%\n"
+        if preamble:
+            latex = latex.replace("\\begin{tabular}", preamble + "\\begin{tabular}", 1)
+            if font:
+                latex = latex.replace("\\end{tabular}", "\\end{tabular}%\n}", 1)
+        if sideways:
+            latex = latex.replace("\\begin{table}", "\\begin{sidewaystable}", 1)
+            latex = latex.replace("\\end{table}", "\\end{sidewaystable}", 1)
+
     path.write_text(latex)
     print(path, flush=True)
     return path
@@ -168,7 +202,15 @@ def prep_datasets() -> pd.DataFrame:
 def tab3_datasets() -> Path:
     """T3: dataset inventory (19 rows)."""
     prep = prep_datasets()
-    return to_booktabs(prep, ARTIFACTS / "tab3_datasets.tex")
+    # Seven columns, several holding long names: the inter-column padding alone
+    # is charged 14 times, so tightening it (plus a size drop) is what keeps this
+    # inside the text block.
+    return to_booktabs(
+        prep,
+        ARTIFACTS / "tab3_datasets.tex",
+        font="scriptsize",
+        tabcolsep="3.5pt",
+    )
 
 
 def prep_leaderboard() -> pd.DataFrame:
@@ -272,7 +314,14 @@ def tab_appendix_leaderboard() -> Path:
             "token \\texttt{multiplicative} denotes the gate, Eq.~\\eqref{eq:gate}."
         ),
         label="tab:leaderboard",
-        resizebox=True,
+        # Landscape, on its own page: this table is wide in *content* (long
+        # pipe-separated spec strings), not merely in padding, so shrinking the
+        # font alone still ran ~133pt past the text block. `resizebox` is not an
+        # option under sn-jnl.cls -- see to_booktabs.
+        sideways=True,
+        # Rotated, the table has width to spare, so it does not need to be as
+        # small as it did when it was fighting the portrait text block.
+        font="footnotesize",
     )
 
 

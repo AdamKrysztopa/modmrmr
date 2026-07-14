@@ -1,0 +1,6 @@
+rule,member,source,p_raw,p_holm,survives_at_0.05
+2,operator Friedman on noise rate,stats_operators_mechanism.csv,0.0001480172379745,0.0007400861898725,True
+1,"relevance axis, within-nonlinear-class Friedman (expanded)",stats_nonlinear_expanded.csv,0.0006112527611295,0.002445011044518,True
+2,"per-$p$ paired Wilcoxon, high-dimensional sweep",stats_highdim_synth_paired.csv,0.001953125,0.005859375,True
+1,"relevance axis, within-linear-class Friedman",stats_measure_families_by_dependence.csv,0.0024787521766663,0.005859375,True
+3,stopping-mode Friedman,stats_stopping.csv,0.0169403735225339,0.0169403735225339,True
