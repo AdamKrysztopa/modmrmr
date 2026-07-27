@@ -26,6 +26,8 @@ class _FRegressionScorer:
     """Univariate linear F-test relevance (sklearn ``f_regression``)."""
 
     name: str = "f_regression"
+    # F = (n-2) * r^2 / (1 - r^2) depends only on the symmetric Pearson r.
+    symmetric: bool = True
 
     def score_pair(
         self,

@@ -1,0 +1,6 @@
+benchmark,scorer,n,p,data_kind,seed,status,median_s,iqr_s,repeats,projected_s
+driver_scaling,pearson_abs,500,25,continuous,20260719,ok,6.879097782075405e-05,9.333016350865364e-06,5,
+driver_scaling,pearson_abs,500,50,continuous,20260720,ok,7.870903937146068e-05,3.7070130929350853e-06,5,
+driver_scaling,pearson_abs,500,100,continuous,20260721,ok,0.00013029202818870544,2.708984538912773e-06,5,
+driver_scaling,pearson_abs,500,200,continuous,20260722,ok,0.00034129200503230095,4.667032044380903e-06,5,
+driver_scaling,pearson_abs,500,400,continuous,20260723,ok,0.0011308339890092611,1.5249999705702066e-05,5,

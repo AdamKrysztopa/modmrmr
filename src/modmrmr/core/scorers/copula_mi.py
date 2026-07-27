@@ -95,6 +95,9 @@ class _CopulaMiScorer:
     """
 
     name: str = "copula_mi"
+    # Both marginals are rank-transformed to the empirical copula, then binned
+    # into a symmetric joint histogram MI.
+    symmetric: bool = True
 
     def __init__(self, *, n_bins: int = 16) -> None:
         self._n_bins = n_bins

@@ -23,6 +23,7 @@ from modmrmr.core.scorers.base import (
     as_importance_function,
     as_penalty_matrix,
     build_scorer,
+    fast_pearson_penalty,
     get_scorer,
     list_scorers,
     make_diagnostics,
@@ -87,4 +88,5 @@ __all__ = [
     "list_scorers",
     "as_importance_function",
     "as_penalty_matrix",
+    "fast_pearson_penalty",
 ]

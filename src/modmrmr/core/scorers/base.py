@@ -27,6 +27,7 @@ from typing import Any, Protocol, runtime_checkable
 
 import numpy as np
 import pandas as pd
+from joblib import Parallel, delayed
 
 from modmrmr.core.normalize import build_normalizer  # re-exported for convenience
 from modmrmr.models import (
@@ -214,9 +215,22 @@ def as_importance_function(
 
 
 def as_penalty_matrix(
-    scorer: PairwiseDependenceScorer, *, random_state: int = 42
+    scorer: PairwiseDependenceScorer,
+    *,
+    random_state: int = 42,
+    n_jobs: int | None = None,
 ) -> Callable[..., pd.DataFrame]:
-    """Adapt a pairwise scorer into ``penalty_function(X) -> feature x feature redundancy``."""
+    """Adapt a pairwise scorer into ``penalty_function(X) -> feature x feature redundancy``.
+
+    Args:
+        scorer: Pairwise scorer to adapt.
+        random_state: Base seed passed to every ``score_pair`` call.
+        n_jobs: joblib worker count for the pair loop. ``None`` (default) runs
+            serially, following the scikit-learn convention — a library should
+            not take every core unless asked. ``-1`` uses all cores. Results
+            are independent of this setting: each pair is seeded from its own
+            indices and joblib preserves input ordering.
+    """
 
     def _penalty(X: Any, **_: Any) -> pd.DataFrame:
         if not getattr(scorer, "supports_redundancy", True):
@@ -225,19 +239,60 @@ def as_penalty_matrix(
                 "cannot be used as a pairwise redundancy penalty."
             )
         X_df = X if isinstance(X, pd.DataFrame) else pd.DataFrame(X)
+
+        # Matrix fast path: scorers whose all-pairs form reduces to a single
+        # vectorized computation expose score_matrix. It requires finite input,
+        # so a ValueError means "fall back to the NaN-tolerant pair loop".
+        if hasattr(scorer, "score_matrix"):
+            try:
+                return scorer.score_matrix(X_df)
+            except ValueError:
+                pass
+
         cols = list(X_df.columns)
         arrs = {c: X_df[c].to_numpy(dtype=float) for c in cols}
-        out = pd.DataFrame(index=cols, columns=cols, dtype=float)
-        for i, a in enumerate(cols):
-            for j, b in enumerate(cols):
-                out.loc[a, b] = (
-                    1.0
-                    if i == j
-                    else scorer.score_pair(arrs[a], arrs[b], random_state=random_state).raw_value
-                )
-        return out
+        symmetric = getattr(scorer, "symmetric", False)
+
+        # Upper-triangle work list. For a symmetric scorer the mirror entry is
+        # exact; otherwise the reverse direction is computed too. Both entries
+        # are always written, so any pool-based normalizer sees an unchanged
+        # multiset (see tests/test_pairwise_symmetry_parity.py).
+        jobs = [(i, j) for i in range(len(cols)) for j in range(i + 1, len(cols))]
+
+        def _score(i: int, j: int) -> tuple[int, int, float, float]:
+            a, b = cols[i], cols[j]
+            forward = scorer.score_pair(arrs[a], arrs[b], random_state=random_state).raw_value
+            reverse = (
+                forward
+                if symmetric
+                else scorer.score_pair(arrs[b], arrs[a], random_state=random_state).raw_value
+            )
+            return i, j, float(forward), float(reverse)
+
+        if n_jobs is None or n_jobs == 1:
+            results = [_score(i, j) for i, j in jobs]
+        else:
+            results = Parallel(n_jobs=n_jobs)(delayed(_score)(i, j) for i, j in jobs)
+
+        out = np.ones((len(cols), len(cols)), dtype=float)
+        for i, j, forward, reverse in results:
+            out[i, j] = forward
+            out[j, i] = reverse
+        return pd.DataFrame(out, index=cols, columns=cols)
 
     return _penalty
+
+
+def _symmetrize(m: np.ndarray) -> np.ndarray:
+    """Mirror the upper triangle onto the lower one, in place.
+
+    ``np.corrcoef`` is only symmetric to rounding (``c[i, j]`` and ``c[j, i]``
+    come from separately-accumulated dot products), whereas the pairwise driver
+    is bitwise symmetric by construction: it scores ``i < j`` once and copies.
+    Mirroring reproduces that exactly, keeping the same triangle the loop keeps.
+    """
+    upper = np.triu(m, 1)
+    return np.triu(m) + upper.T
 
 
 def fast_pearson_penalty(X: pd.DataFrame) -> pd.DataFrame:
@@ -255,5 +310,6 @@ def fast_pearson_penalty(X: pd.DataFrame) -> pd.DataFrame:
     with np.errstate(invalid="ignore", divide="ignore"):
         corr = np.abs(np.corrcoef(arr, rowvar=False))
     corr = np.nan_to_num(corr, nan=0.0)  # constant columns → 0, matching the loop's guard
+    corr = _symmetrize(corr)
     np.fill_diagonal(corr, 1.0)
     return pd.DataFrame(corr, index=X.columns, columns=X.columns)

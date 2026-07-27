@@ -207,6 +207,23 @@ def _apply_relevance_floor(
     return eligible, rejected
 
 
+# Normalization strategies whose transform does not depend on the fitted pool.
+# Only these license lazy redundancy scoring: under any pool-relative strategy,
+# computing fewer pairs changes the pool and therefore every normalized value.
+# Adding a strategy here is a correctness claim and needs a proof, not a guess.
+_POOL_INDEPENDENT_NORMALIZATIONS = frozenset({"none"})
+
+
+def _redundancy_is_pool_independent(config: LagAwareModMRMRConfig) -> bool:
+    """True when redundancy normalization does not depend on the full pool.
+
+    ``rank_percentile`` maps a value to its position within the fitted pool, so
+    scoring fewer pairs shifts every result. ``none`` is pass-through and is
+    therefore unaffected by which pairs were scored.
+    """
+    return config.redundancy_scorer.normalization in _POOL_INDEPENDENT_NORMALIZATIONS
+
+
 def _score_pairwise_redundancy(
     states: list[_CandidateState],
     scorer: PairwiseDependenceScorer,
@@ -222,18 +239,32 @@ def _score_pairwise_redundancy(
         scorer: Redundancy scorer implementation.
         random_state: Base random seed.
     """
+    symmetric = getattr(scorer, "symmetric", False)
+    n_states = len(states)
     for i, st_a in enumerate(states):
-        for j, st_b in enumerate(states):
-            if i == j:
-                continue
-            seed = random_state + i * len(states) + j
+        for j in range(i + 1, n_states):
+            st_b = states[j]
             # Clip to common window: z_lagged arrays have length n-lag, which
             # differs across candidates built at different lags.
             min_len = min(len(st_a.z_lagged), len(st_b.z_lagged))
-            raw = scorer.score_pair(
-                st_a.z_lagged[:min_len], st_b.z_lagged[:min_len], random_state=seed
+            forward = scorer.score_pair(
+                st_a.z_lagged[:min_len],
+                st_b.z_lagged[:min_len],
+                random_state=random_state + i * n_states + j,
             )
-            st_a.raw_redundancy[st_b.key] = raw
+            st_a.raw_redundancy[st_b.key] = forward
+            # Both directions are always stored, so the normalization pool at
+            # _normalize_redundancy keeps the same multiset and rank_percentile
+            # is unchanged. Only the computation is halved.
+            st_b.raw_redundancy[st_a.key] = (
+                forward
+                if symmetric
+                else scorer.score_pair(
+                    st_b.z_lagged[:min_len],
+                    st_a.z_lagged[:min_len],
+                    random_state=random_state + j * n_states + i,
+                )
+            )
 
 
 def _normalize_redundancy(

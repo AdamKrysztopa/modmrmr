@@ -7,6 +7,14 @@
 PBE-F30:
   name: mod_mrmr
   description: "run_lag_aware_mod_mrmr (p=200 covariates, N=500)"
-  budget_seconds: 350.0
-  baseline_machine: "CI (GitHub Actions linux-latest; Mac measured 41.29s, CI measured 237s)"
-  measured_mean_seconds: 41.29
+  budget_seconds: 182.0
+  # Tightened 2026-07-27 after the Phase 2 optimizations (see
+  # results/profiling/DECISION.md). Mac mean fell 41.29s -> 21.52s (mean of
+  # 21.70/21.33/21.52), a 1.92x improvement; the budget is scaled by the same
+  # ratio (350 * 21.52/41.29 = 182). Scaling rather than applying the 5x-local
+  # rule is deliberate: this budget is CI-bound, not Mac-bound. CI ran 5.74x
+  # slower than this Mac (237s vs 41.29s), so 5x the local mean would be 108s
+  # against a projected CI time of ~124s and would fail on green code. Scaling
+  # preserves the existing CI headroom exactly while locking in the win.
+  baseline_machine: "CI (GitHub Actions linux-latest; Mac measured 21.52s, CI projected ~124s)"
+  measured_mean_seconds: 21.52

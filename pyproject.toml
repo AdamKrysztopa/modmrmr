@@ -12,6 +12,7 @@ dependencies = [
   "pandas>=2.1,<4",
   "pydantic>=2.12,<3",
   "dcor>=0.7",
+  "joblib>=1.4",
   "skrebate>=0.8.2",
 ]
 

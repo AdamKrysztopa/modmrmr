@@ -5,12 +5,14 @@ from __future__ import annotations
 import math
 
 import numpy as np
+import pandas as pd
 from scipy.special import digamma
+from scipy.stats import norm, rankdata
 from sklearn.feature_selection import mutual_info_regression
 from sklearn.neighbors import NearestNeighbors
 
-from modmrmr._vendor.gcmi import compute_gcmi
-from modmrmr.core.scorers.base import _MIN_PAIRS, _RawScore
+from modmrmr._vendor.gcmi import _RHO_CLIP, compute_gcmi
+from modmrmr.core.scorers.base import _MIN_PAIRS, _RawScore, _symmetrize
 
 
 class _MutualInfoSklearnScorer:
@@ -118,6 +120,8 @@ class _GcmiScorer:
     """Gaussian-copula MI scorer.  Nonlinear proxy; experimental."""
 
     name: str = "gcmi"
+    # Each marginal is rank-normalised independently, then correlated.
+    symmetric: bool = True
 
     def score_pair(
         self,
@@ -142,6 +146,33 @@ class _GcmiScorer:
             estimator_settings={"scorer": "gcmi"},
         )
 
+    def score_matrix(self, X: pd.DataFrame) -> pd.DataFrame:
+        """All-pairs GCMI in one BLAS call.
+
+        GCMI rank-normalises each marginal independently and then applies
+        I = -0.5*log2(1 - rho^2) to their Pearson correlation. Normalising each
+        column once and taking a single correlation matrix therefore reproduces
+        the pairwise result exactly — the per-column transform never depends on
+        the partner column.
+        """
+        arr = X.to_numpy(dtype=float)
+        if not np.isfinite(arr).all():
+            raise ValueError(
+                "score_matrix requires fully finite input; the pairwise "
+                "score_pair path is the NaN-tolerant reference."
+            )
+        n = arr.shape[0]
+        gaussianized = norm.ppf(np.apply_along_axis(rankdata, 0, arr) / (n + 1))
+        with np.errstate(invalid="ignore", divide="ignore"):
+            rho = np.corrcoef(gaussianized, rowvar=False)
+        rho = _symmetrize(np.nan_to_num(rho, nan=0.0))
+        clipped = np.clip(np.abs(rho), 0.0, _RHO_CLIP)
+        mi = np.maximum(-0.5 * np.log2(1.0 - clipped**2), 0.0)
+        # Self-MI is the clip bound (~14.4 bits), but the pairwise driver writes
+        # 1.0 on the diagonal; match it, or the normalization pool would change.
+        np.fill_diagonal(mi, 1.0)
+        return pd.DataFrame(mi, index=X.columns, columns=X.columns)
+
 
 def _counts_within_radius(
     sorted_vals: np.ndarray, vals: np.ndarray, radii: np.ndarray
@@ -155,6 +186,45 @@ def _counts_within_radius(
     lo = np.searchsorted(sorted_vals, vals - radii, side="left")
     hi = np.searchsorted(sorted_vals, vals + radii, side="right")
     return (hi - lo).astype(np.float64)
+
+
+def _eps_separated(v: np.ndarray, eps: float) -> bool:
+    """True when no two *distinct* values of ``v`` lie within ``eps``.
+
+    Under this condition ``|v - v[i]| <= eps`` is equivalent to ``v == v[i]``,
+    which is what licenses replacing the per-point box count with exact-
+    duplicate grouping.
+    """
+    unique = np.unique(v)
+    return bool(unique.size < 2 or np.min(np.diff(unique)) > eps)
+
+
+def _coincidence_counts(x: np.ndarray, y: np.ndarray, eps: float) -> np.ndarray | None:
+    """Per-point count of samples inside the ``eps`` box, vectorized.
+
+    Replaces an O(n^2) Python loop with one O(n log n) ``np.unique`` pass.
+
+    The loop's ``<= eps`` box is not a transitive relation in general, so exact
+    grouping is only equivalent when both coordinates are eps-separated. When
+    they are not, this returns ``None`` and the caller uses the reference loop
+    — parity by construction rather than by approximation.
+
+    Args:
+        x: First standardized marginal.
+        y: Second standardized marginal.
+        eps: Coincidence tolerance.
+
+    Returns:
+        Float array of per-point counts, or ``None`` if the fast path does not
+        apply.
+    """
+    if not (_eps_separated(x, eps) and _eps_separated(y, eps)):
+        return None
+    pairs = np.column_stack([x, y])
+    _, inverse, counts = np.unique(pairs, axis=0, return_inverse=True, return_counts=True)
+    # numpy 2.0 returned a column-shaped inverse for axis=0; reshape defensively
+    # so this works across the supported numpy range.
+    return counts[inverse.reshape(-1)].astype(np.float64)
 
 
 def _mixed_ksg_mi(x: np.ndarray, y: np.ndarray, *, k: int) -> float:
@@ -190,9 +260,15 @@ def _mixed_ksg_mi(x: np.ndarray, y: np.ndarray, *, k: int) -> float:
 
     k_i = np.full(n, float(k_eff))
     if np.any(tie):
-        for i in np.nonzero(tie)[0]:
-            close = (np.abs(x - x[i]) <= eps) & (np.abs(y - y[i]) <= eps)
-            k_i[i] = float(np.count_nonzero(close))
+        fast_counts = _coincidence_counts(x, y, eps)
+        if fast_counts is not None:
+            k_i[tie] = fast_counts[tie]
+        else:
+            # Reference path: the eps box is not an equivalence relation on this
+            # data, so each tied point is counted individually.
+            for i in np.nonzero(tie)[0]:
+                close = (np.abs(x - x[i]) <= eps) & (np.abs(y - y[i]) <= eps)
+                k_i[i] = float(np.count_nonzero(close))
 
     mi = float(digamma(n) + np.mean(digamma(k_i) - digamma(nx) - digamma(ny)))
     return max(mi, 0.0)
@@ -207,6 +283,9 @@ class _MixedKsgScorer:
     """
 
     name: str = "mixed_ksg"
+    # Both marginals are standardized before the joint Chebyshev search, so
+    # the estimator is order-independent.
+    symmetric: bool = True
 
     def __init__(self, *, n_neighbors: int = 5) -> None:
         self._n_neighbors = n_neighbors
@@ -262,6 +341,9 @@ class _AmiAdaptiveScorer:
     """
 
     name: str = "ami_adaptive"
+    # Both marginals are standardized before the joint Chebyshev search, so
+    # the estimator is order-independent.
+    symmetric: bool = True
 
     def __init__(self, *, k_min: int = 3, k_max: int = 20) -> None:
         self._k_min = k_min

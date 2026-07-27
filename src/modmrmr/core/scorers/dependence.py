@@ -27,6 +27,8 @@ class _DistanceCorrScorer:
     """
 
     name: str = "distance_corr"
+    # dcor's distance covariance/correlation is defined symmetrically in x, y.
+    symmetric: bool = True
 
     def score_pair(
         self,
