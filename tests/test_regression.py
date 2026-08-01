@@ -1,7 +1,9 @@
-"""Lag-aware ModMRMR regression tests against frozen golden-master fixtures.
+"""Lag-aware ModMRMR regression tests against frozen characterization fixtures.
 
 Compares the ported ModMRMR engine output against the frozen fixtures under
-``tests/fixtures/expected/``, over the ModMRMR-owned fields only.  The
+``tests/fixtures/expected/``, over the ModMRMR-owned fields only. Their purpose,
+oracle limitations, and update policy are documented in
+``tests/fixtures/expected/README.md``. The
 downstream forecast-prep-contract export fields (``contract`` / ``lag_table``
 / ``markdown_length``) are intentionally out of scope and skipped by the
 comparison (see ``modmrmr.diagnostics.regression``).
@@ -21,7 +23,7 @@ from modmrmr.diagnostics.regression import (
 
 
 class TestLagAwareModMRMRRegressionMatchesFrozen:
-    """Rebuilt ModMRMR outputs must match frozen expected JSON (in-scope keys)."""
+    """Rebuilt outputs must match the frozen characterization (in-scope keys)."""
 
     @pytest.mark.parametrize("case_name", LAG_AWARE_MOD_MRMR_FIXTURE_CASES)
     def test_scenario_matches_frozen_expected(self, case_name: str) -> None:
@@ -36,7 +38,7 @@ class TestLagAwareModMRMRRegressionMatchesFrozen:
     def test_all_expected_files_present(self) -> None:
         """Every fixture case must have a corresponding expected JSON file."""
         for case_name in LAG_AWARE_MOD_MRMR_FIXTURE_CASES:
-            # load_fixture raises FileNotFoundError if the golden file is absent.
+            # load_fixture raises FileNotFoundError if the characterization is absent.
             fixture = load_fixture(case_name)
             assert fixture["case_name"] == case_name
 
@@ -76,7 +78,7 @@ class TestNotesCarryNoAttribution:
     """Runtime notes describe the method, not who proposed it."""
 
     def test_no_fixture_note_names_an_author(self) -> None:
-        """Author attribution must not be load-bearing in the golden masters."""
+        """Author attribution must not be load-bearing in the fixtures."""
         for case_name in LAG_AWARE_MOD_MRMR_FIXTURE_CASES:
             fixture = load_fixture(case_name)
             for note in fixture.get("notes", []):

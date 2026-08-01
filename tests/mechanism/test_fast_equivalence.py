@@ -1,4 +1,4 @@
-"""Hard equivalence gate: ``run_fast_factorial_grid`` must byte-match ``run_factorial_grid``.
+"""Equivalence gates for the memoized and reference factorial-grid runners.
 
 The fast path (``mechanism.fast_factorial_protocol``) memoizes the relevance
 vector and redundancy matrix per ``(dataset, seed, split-role, relevance,
@@ -9,10 +9,11 @@ must be numerically identical to the reference oracle
 memoization is wrong: it must be fixed until identical, never shipped
 divergent.
 
-The grid below is representative, not exhaustive: 2 datasets (including
-``quotient_trap_reg``), >=4 specs spanning >=2 relevance families and >=2
-redundancy scorers and all 3 operators + agg {mean, max}, ks=[1,2,3,5],
-thresholds=[0.0,0.05,0.1], seeds=[0,1].
+The default suite keeps a compact exact-parity smoke covering every operator,
+both principal aggregation paths, representative relevance/redundancy scorer
+families, and cache reuse across operators/aggregations. The broader two-dataset
+parameter grid and its relative timing check are ``perf_budget`` tests, intended
+for the serial performance lane.
 """
 
 from __future__ import annotations
@@ -20,12 +21,23 @@ from __future__ import annotations
 import time
 
 import pandas as pd
+import pytest
 
 from mechanism.factorial import SelectorSpec
 from mechanism.factorial_protocol import run_factorial_grid
 from mechanism.fast_factorial_protocol import run_fast_factorial_grid
 
-_SPECS = [
+_SMOKE_SPECS = [
+    SelectorSpec("f", "pearson_abs", "difference", "mean"),
+    SelectorSpec("f", "pearson_abs", "quotient", "max"),
+    SelectorSpec("mi", "mutual_info_sklearn", "multiplicative", "mean"),
+]
+_SMOKE_DATASETS = ["quotient_trap_reg"]
+_SMOKE_KS = [3]
+_SMOKE_THRESHOLDS = [0.05]
+_SMOKE_SEEDS = [0]
+
+_BROAD_SPECS = [
     # relevance=f, redundancy=pearson_abs, operator=difference, agg=mean
     SelectorSpec("f", "pearson_abs", "difference", "mean"),
     # relevance=f, redundancy=pearson_abs, operator=quotient, agg=max -- same
@@ -38,10 +50,10 @@ _SPECS = [
     # relevance=pearson, redundancy=distance_corr, operator=quotient, agg=mean
     SelectorSpec("pearson", "distance_corr", "quotient", "mean"),
 ]
-_DATASETS = ["quotient_trap_reg", "radial"]
-_KS = [1, 2, 3, 5]
-_THRESHOLDS = [0.0, 0.05, 0.1]
-_SEEDS = [0, 1]
+_BROAD_DATASETS = ["quotient_trap_reg", "radial"]
+_BROAD_KS = [1, 2, 3, 5]
+_BROAD_THRESHOLDS = [0.0, 0.05, 0.1]
+_BROAD_SEEDS = [0, 1]
 
 _SORT_KEYS = ["dataset", "spec", "stop_mode", "k", "score_threshold", "seed"]
 
@@ -50,23 +62,46 @@ def _sorted(df: pd.DataFrame) -> pd.DataFrame:
     return df.sort_values(_SORT_KEYS, kind="stable").reset_index(drop=True)
 
 
-def test_fast_grid_is_byte_identical_to_reference_oracle() -> None:
-    reference = run_factorial_grid(_SPECS, _DATASETS, _KS, _THRESHOLDS, _SEEDS)
-    fast = run_fast_factorial_grid(_SPECS, _DATASETS, _KS, _THRESHOLDS, _SEEDS)
-
+def _assert_grids_equal(reference: pd.DataFrame, fast: pd.DataFrame) -> None:
     ref_sorted = _sorted(reference).drop(columns=["runtime_s"])
     fast_sorted = _sorted(fast).drop(columns=["runtime_s"])
 
     pd.testing.assert_frame_equal(ref_sorted, fast_sorted)
 
 
-def test_fast_grid_is_actually_faster() -> None:
+def test_fast_grid_smoke_is_byte_identical_to_reference_oracle() -> None:
+    reference = run_factorial_grid(
+        _SMOKE_SPECS, _SMOKE_DATASETS, _SMOKE_KS, _SMOKE_THRESHOLDS, _SMOKE_SEEDS
+    )
+    fast = run_fast_factorial_grid(
+        _SMOKE_SPECS, _SMOKE_DATASETS, _SMOKE_KS, _SMOKE_THRESHOLDS, _SMOKE_SEEDS
+    )
+
+    _assert_grids_equal(reference, fast)
+
+
+@pytest.mark.perf_budget
+def test_fast_grid_broad_is_byte_identical_to_reference_oracle() -> None:
+    reference = run_factorial_grid(
+        _BROAD_SPECS, _BROAD_DATASETS, _BROAD_KS, _BROAD_THRESHOLDS, _BROAD_SEEDS
+    )
+    fast = run_fast_factorial_grid(
+        _BROAD_SPECS, _BROAD_DATASETS, _BROAD_KS, _BROAD_THRESHOLDS, _BROAD_SEEDS
+    )
+
+    _assert_grids_equal(reference, fast)
+
+
+@pytest.mark.perf_budget
+def test_fast_grid_broad_is_actually_faster() -> None:
     t0 = time.perf_counter()
-    run_factorial_grid(_SPECS, _DATASETS, _KS, _THRESHOLDS, _SEEDS)
+    run_factorial_grid(_BROAD_SPECS, _BROAD_DATASETS, _BROAD_KS, _BROAD_THRESHOLDS, _BROAD_SEEDS)
     reference_s = time.perf_counter() - t0
 
     t0 = time.perf_counter()
-    run_fast_factorial_grid(_SPECS, _DATASETS, _KS, _THRESHOLDS, _SEEDS)
+    run_fast_factorial_grid(
+        _BROAD_SPECS, _BROAD_DATASETS, _BROAD_KS, _BROAD_THRESHOLDS, _BROAD_SEEDS
+    )
     fast_s = time.perf_counter() - t0
 
     assert fast_s < reference_s, (

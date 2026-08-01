@@ -1,0 +1,82 @@
+name: Scheduled evidence
+
+on:
+  schedule:
+    # Run off the hour to reduce contention on GitHub-hosted runners.
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scheduled-evidence-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  performance:
+    name: performance budgets (py3.12)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Sync dependencies (default + dev groups)
+        run: uv sync --python 3.12
+
+      - name: Create report directory
+        run: mkdir -p reports
+
+      - name: Run performance evidence serially
+        # Clear the default marker exclusion before selecting perf_budget.
+        run: >-
+          uv run pytest -o addopts="" -n 0 -m perf_budget
+          --junitxml=reports/perf-budget.xml
+
+      - name: Upload performance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-budget-junit
+          path: reports/perf-budget.xml
+          if-no-files-found: warn
+          retention-days: 30
+
+  network:
+    name: remote dataset loaders (py3.12)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Sync dependencies (default + dev groups)
+        run: uv sync --python 3.12
+
+      - name: Create report directory
+        run: mkdir -p reports
+
+      - name: Run remote dataset evidence
+        # Keep external-provider checks out of the PR lane and isolated from
+        # performance evidence so a provider outage has a clear diagnosis.
+        run: >-
+          uv run pytest -o addopts="" -n 0 -m network
+          --junitxml=reports/network.xml
+
+      - name: Upload network report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: network-junit
+          path: reports/network.xml
+          if-no-files-found: warn
+          retention-days: 30

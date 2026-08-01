@@ -35,8 +35,13 @@ jobs:
       - name: Ruff lint
         run: uv run ruff check .
 
+      - name: Type check
+        if: matrix.python-version == '3.12'
+        # The mypy configuration targets Python 3.12 so it can parse NumPy 2.x
+        # PEP 695 stubs. Both matrix entries still run the tests below.
+        run: uv run mypy src
+
       - name: Tests
         # Default marker filter (perf_budget + network) is excluded via
         # pyproject addopts; run the rest in parallel.
         run: uv run pytest -n auto
-
