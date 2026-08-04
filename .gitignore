@@ -1,5 +1,10 @@
 # reference papers (large binaries, not ours to redistribute)
 input_papers/
+
+# Downloaded benchmark data (~155 MB once materialised). Regenerable and
+# checksum-pinned via `uv run python -m benchmarks.fetch`, and not ours to
+# redistribute, so it is a local cache rather than a tracked artifact.
+benchmarks/data/
 .DS_Store
 __pycache__/
 *.pyc
