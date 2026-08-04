@@ -1,10 +1,13 @@
+import hashlib
+
 import numpy as np
 import pandas as pd
 import pytest
 from scipy.io import savemat
 
 from benchmarks import datasets
-from benchmarks.datasets import DATASETS, list_datasets, load_dataset
+from benchmarks.datasets import DATASETS, list_datasets, load_dataset, local_filename
+from benchmarks.fetch import REMOTE_FILES, RemoteFile
 
 REQUIRED_KEYS = {"loader", "task", "n", "p", "source", "rationale"}
 
@@ -136,11 +139,38 @@ def test_uci_csv_loader_encodes_categoricals_and_splits_target(data_dir):
 
 
 @pytest.mark.parametrize(
-    ("name", "filename"), [("colon", "colon.mat"), ("blog_feedback", "blogfeedback.csv")]
+    ("name", "filename"),
+    [
+        ("colon", "colon.mat"),
+        ("allaml", "ALLAML.mat"),
+        ("lymphoma", "lymphoma.mat"),
+        ("prostate_ge", "Prostate_GE.mat"),
+        ("smk_can_187", "SMK_CAN_187.mat"),
+        ("ct_slices", "ct_slices.csv"),
+        ("blog_feedback", "blogfeedback.csv"),
+    ],
 )
-def test_file_backed_loaders_report_missing_file_actionably(data_dir, name, filename):
-    with pytest.raises(FileNotFoundError, match=filename):
-        load_dataset(name)
+def test_file_backed_datasets_declare_the_file_they_provision(name, filename):
+    assert local_filename(name) == filename
+
+
+def test_non_file_backed_datasets_declare_no_local_file():
+    for name in ["breast_cancer", "friedman1", "synthetic_clf", "madelon", "wine_quality"]:
+        assert local_filename(name) is None
+
+
+def test_missing_file_triggers_a_checked_download(data_dir, monkeypatch):
+    """A dataset with no local copy provisions itself rather than raising."""
+    payload = data_dir / "source.mat"
+    savemat(payload, {"X": np.ones((2, 3)), "Y": np.array([[1], [2]])})
+    digest = hashlib.sha256(payload.read_bytes()).hexdigest()
+    monkeypatch.setitem(REMOTE_FILES, "colon.mat", RemoteFile(payload.resolve().as_uri(), digest))
+
+    X, y, _ = load_dataset("colon")
+
+    assert (data_dir / "colon.mat").exists()
+    assert X.shape == (2, 3)
+    assert y.tolist() == [1, 2]
 
 
 def test_every_entry_has_dependence_tag():

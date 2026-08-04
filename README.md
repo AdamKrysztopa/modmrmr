@@ -28,6 +28,15 @@ baseline libraries the studies compare against):
 uv sync --group benchmarks
 ```
 
+Most benchmark datasets load from scikit-learn or OpenML on demand. Seven —
+five scikit-feature microarray sets plus the two UCI archives — are downloaded
+into `benchmarks/data/` on first use, checksum-verified against pinned sources.
+To provision them up front (e.g. before an offline run):
+
+```bash
+uv run python -m benchmarks.fetch
+```
+
 As a dependency in another project:
 
 ```bash

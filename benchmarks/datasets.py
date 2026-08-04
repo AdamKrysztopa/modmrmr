@@ -7,8 +7,10 @@ it does not affect loading. ``loader`` is a
 zero-arg callable returning ``(X: pd.DataFrame, y: pd.Series)``. Small sklearn-builtin
 and synthetic sets load eagerly; OpenML / UCI / scikit-feature microarray sets are
 registered with a loader but are NEVER downloaded by the unit tests (see the
-``network`` pytest marker). Microarray ``.mat`` files are expected under
-``benchmarks/data/`` and UCI CSVs likewise; loaders raise a clear error if missing.
+``network`` pytest marker). Microarray ``.mat`` files and UCI CSVs live under
+``benchmarks/data/``; :func:`benchmarks.fetch.ensure_dataset_file` downloads and
+materialises them on first use, checksum-verified against pinned sources. Run
+``uv run python -m benchmarks.fetch`` to provision them all ahead of an offline run.
 
 OpenML ids are verified against the OpenML registry.
 """
@@ -27,6 +29,8 @@ from sklearn.datasets import (
     make_classification,
     make_friedman1,
 )
+
+from benchmarks.fetch import ensure_dataset_file
 
 _DATA_DIR = Path(__file__).parent / "data"
 _SEED = 0
@@ -88,33 +92,26 @@ def _skfeature_mat_loader(filename: str) -> Callable[[], tuple[pd.DataFrame, pd.
     def _load() -> tuple[pd.DataFrame, pd.Series]:
         from scipy.io import loadmat  # local import
 
-        path = _DATA_DIR / filename
-        if not path.exists():
-            raise FileNotFoundError(
-                f"Microarray file {path} missing. Download the scikit-feature .mat "
-                f"into benchmarks/data/ before running this dataset."
-            )
+        path = ensure_dataset_file(filename, _DATA_DIR)
         mat = loadmat(path)
         X_arr = np.asarray(mat["X"], dtype=float)
         y_arr = np.asarray(mat["Y"]).ravel().astype(int)
         X = pd.DataFrame(X_arr, columns=[f"g{i}" for i in range(X_arr.shape[1])])
         return X, pd.Series(y_arr, name="target")
 
+    _load.local_file = filename
     return _load
 
 
 def _uci_csv_loader(filename: str, target_col: str) -> Callable[[], tuple[pd.DataFrame, pd.Series]]:
     def _load() -> tuple[pd.DataFrame, pd.Series]:
-        path = _DATA_DIR / filename
-        if not path.exists():
-            raise FileNotFoundError(
-                f"UCI file {path} missing. Download the CSV into benchmarks/data/ first."
-            )
+        path = ensure_dataset_file(filename, _DATA_DIR)
         df = pd.read_csv(path)
         y = df[target_col].reset_index(drop=True)
         X = pd.get_dummies(df.drop(columns=[target_col]), drop_first=True).reset_index(drop=True)
         return X, y
 
+    _load.local_file = filename
     return _load
 
 
@@ -341,6 +338,16 @@ DATASETS: dict[str, dict] = {
         "dependence": "unknown",
     },
 }
+
+
+def local_filename(name: str) -> str | None:
+    """Name of the file under ``benchmarks/data/`` this dataset needs, if any.
+
+    Returns ``None`` for datasets that load without a provisioned file (sklearn
+    builtins, synthetic sets, OpenML). Lets callers pre-flight provisioning, and
+    lets the tests assert every file-backed entry has a registered download.
+    """
+    return getattr(DATASETS[name]["loader"], "local_file", None)
 
 
 def list_datasets(task: str | None = None) -> list[str]:
