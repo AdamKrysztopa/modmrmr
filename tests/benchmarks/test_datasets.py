@@ -1,7 +1,9 @@
 import numpy as np
 import pandas as pd
 import pytest
+from scipy.io import savemat
 
+from benchmarks import datasets
 from benchmarks.datasets import DATASETS, list_datasets, load_dataset
 
 REQUIRED_KEYS = {"loader", "task", "n", "p", "source", "rationale"}
@@ -67,13 +69,19 @@ def test_unknown_dataset_raises():
 
 
 # --------------------------------------------------------------------------- #
-# Network-gated loader tests — one per remote loader factory (openml / UCI CSV /
-# scikit-feature .mat). Deselected by default (`addopts` excludes `network`); run
-# explicitly with `uv run pytest -m network`. Without these the registry's
-# non-builtin loaders (14/24 datasets) have zero executed coverage.
+# Network-gated loader tests — one classification and one regression OpenML id,
+# so a provider outage or a retired dataset id is diagnosed directly. Deselected
+# by default (`addopts` excludes `network`); run explicitly with
+# `uv run pytest -m network`.
+#
+# Only genuinely-remote loaders belong here. The file-backed loaders
+# (scikit-feature .mat, UCI CSV) download nothing — they read hand-provisioned
+# files out of `benchmarks/data/`, so marking them `network` made the scheduled
+# evidence lane fail unconditionally on any machine without that directory. They
+# are covered below against temporary fixture files instead.
 # --------------------------------------------------------------------------- #
 @pytest.mark.network
-@pytest.mark.parametrize("name", ["spambase", "colon", "blog_feedback"])
+@pytest.mark.parametrize("name", ["spambase", "wine_quality"])
 def test_remote_loaders_return_wellformed_data(name):
     entry = DATASETS[name]
     X, y, task = load_dataset(name)
@@ -83,6 +91,56 @@ def test_remote_loaders_return_wellformed_data(name):
     assert X.shape[0] == len(y)
     assert X.shape[0] > 0 and X.shape[1] > 0
     assert np.isfinite(X.to_numpy(dtype=float)).all()
+
+
+# --------------------------------------------------------------------------- #
+# File-backed loader tests — the .mat and CSV parsing paths run against fixtures
+# written into a temporary `_DATA_DIR`, giving these factories executed coverage
+# without a download. Both loaders resolve `_DATA_DIR` at call time, so
+# monkeypatching the module attribute redirects the registry entries too.
+# --------------------------------------------------------------------------- #
+@pytest.fixture
+def data_dir(tmp_path, monkeypatch):
+    monkeypatch.setattr(datasets, "_DATA_DIR", tmp_path)
+    return tmp_path
+
+
+def test_skfeature_mat_loader_reads_local_file(data_dir):
+    savemat(
+        data_dir / "colon.mat",
+        {"X": np.arange(12, dtype=float).reshape(4, 3), "Y": np.array([[1], [2], [1], [2]])},
+    )
+
+    X, y, task = load_dataset("colon")
+
+    assert task == "classification"
+    assert X.shape == (4, 3)
+    assert list(X.columns) == ["g0", "g1", "g2"]
+    assert X.to_numpy().dtype == np.float64
+    assert y.tolist() == [1, 2, 1, 2]
+
+
+def test_uci_csv_loader_encodes_categoricals_and_splits_target(data_dir):
+    pd.DataFrame(
+        {"num": [1.0, 2.0, 3.0], "cat": ["a", "b", "a"], "target": [10.0, 20.0, 30.0]}
+    ).to_csv(data_dir / "blogfeedback.csv", index=False)
+
+    X, y, task = load_dataset("blog_feedback")
+
+    assert task == "regression"
+    assert y.tolist() == [10.0, 20.0, 30.0]
+    assert "target" not in X.columns
+    # drop_first=True leaves one indicator for the two-level categorical.
+    assert list(X.columns) == ["num", "cat_b"]
+    assert X["cat_b"].tolist() == [False, True, False]
+
+
+@pytest.mark.parametrize(
+    ("name", "filename"), [("colon", "colon.mat"), ("blog_feedback", "blogfeedback.csv")]
+)
+def test_file_backed_loaders_report_missing_file_actionably(data_dir, name, filename):
+    with pytest.raises(FileNotFoundError, match=filename):
+        load_dataset(name)
 
 
 def test_every_entry_has_dependence_tag():
