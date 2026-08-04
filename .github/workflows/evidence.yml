@@ -27,6 +27,10 @@ jobs:
         uses: astral-sh/setup-uv@v9.0.0
         with:
           enable-cache: true
+          # Per-job suffix: both jobs in this workflow run concurrently on the
+          # same Python and would otherwise race to reserve one cache key, which
+          # makes the loser warn on every scheduled run.
+          cache-suffix: evidence-perf
 
       - name: Sync dependencies (default + dev groups)
         run: uv sync --python 3.12
@@ -62,6 +66,7 @@ jobs:
         uses: astral-sh/setup-uv@v9.0.0
         with:
           enable-cache: true
+          cache-suffix: evidence-network
 
       - name: Sync dependencies (default + dev groups)
         run: uv sync --python 3.12
